@@ -1,13 +1,13 @@
 import scala.annotation.tailrec
 
-object Chapter2 extends App {
-
+object HigherOrderFunctions extends App {
 
   def curryAdd = curry((a: Int, b: Int) => a + b)
 
   def addOne = curryAdd(1)
 
   def addTwo = compose(addOne, addOne)
+
   //  println(s"addTwo(2)=${addTwo(2)}")
 
   //#########Ex 2.5##############
@@ -17,6 +17,7 @@ object Chapter2 extends App {
   def uncurry[A, B, C](f: A => B => C): (A, B) => C = {
     (a: A, b: B) => f(a)(b)
   }
+
   //#########Ex 2.3##############
   def curry[A, B, C](f: (A, B) => C): A => B => C = {
     (a: A) => (b: B) => f(a, b)
