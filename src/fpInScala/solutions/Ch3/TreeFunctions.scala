@@ -47,6 +47,8 @@ object TreeFunctions extends App {
 
   def foldDepth[A](tree: Tree[A]) = fold(tree)(x => 1)((x, y) => (x max y) + 1)
 
-  def foldMap[A,B](tree: Tree[A])(f: A => B) = fold(tree)((x:A) => Leaf(f(x)):Tree)((x:A,y:A) => Branch(x,y):Tree)
+  def mkLeaf[A](value:A):Tree[A] = Leaf(value)
+
+  def foldMap[A,B](tree: Tree[A])(f: A => B) = fold(tree)(x => mkLeaf(f(x)))((x,y) => Branch(x,y))
 
 }
