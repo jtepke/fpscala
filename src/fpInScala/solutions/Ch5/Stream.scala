@@ -34,7 +34,9 @@ sealed trait Stream[+A] {
     case _ => false
   }
 
-  def forAll2(p: A => Boolean): Boolean = foldRight(false)((x, y) => p(x) && y)
+  def forAll2(p: A => Boolean): Boolean = foldRight(true)((x, y) => p(x) && y)
+
+  def exists(p: A => Boolean): Boolean = foldRight(false)((x, y) => p(x) || y)
 
   def foldRight[B](z: => B)(f: (A, => B) => B): B = this match {
     case Cons(head, stream) => f(head(), stream().foldRight(z)(f))
@@ -85,11 +87,28 @@ sealed trait Stream[+A] {
       case _ => None
     }
   }
-  
-}
 
-object test extends App {
-  println(Stream.apply(1, 2, 3, 4, 5, 6).zipAllUnf(Stream.apply("a", "b", "c")).toList)
+  def startsWith[B >: A](prefix: Stream[B]): Boolean = this.headOption match {
+    case None => false
+    case _ =>
+      Stream.unfold((this, prefix)) {
+        x =>
+          x match {
+            case (Cons(headS, tailS), Cons(headP, tailP)) if (headS() == headP()) => Some(true, (tailS(), tailP()))
+            case (Cons(_, _), Cons(_, _)) => Some(false, (Empty, Empty))
+            case (_, Empty) | (Empty, _) => None
+          }
+      }.foldRight(true)(_ && _)
+  }
+
+  def tails = Stream.unfold(this) { x =>
+    x match {
+      case Cons(head, stream) => Some(stream(), stream())
+      case Empty => None
+    }
+  }.append(Stream.apply(this))
+
+  def hasSubSequence[B >: A](s: Stream[B]): Boolean = tails exists (_ startsWith s)
 }
 
 case object Empty extends Stream[Nothing]
@@ -99,7 +118,8 @@ case class Cons[+A](head: () => A, tail: () => Stream[A]) extends Stream[A]
 object Stream {
   def cons[A](hd: => A, tl: => Stream[A]): Stream[A] = {
     lazy val head = hd
-    lazy val tail = tl
+    lazy val
+    tail = tl
     Cons(() => head, () => tail)
   }
 
@@ -137,4 +157,3 @@ object Stream {
   def apply[A](as: A*): Stream[A] =
     if (as.isEmpty) empty else cons(as.head, apply(as.tail: _*))
 }
-
