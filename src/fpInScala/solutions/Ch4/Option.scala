@@ -1,14 +1,11 @@
 package fpInScala.solutions.Ch4
 
+import scala.collection.immutable.List
+
 sealed trait Option[+A] {
   def map[B](f: A => B): Option[B] = this match {
     case None => None
     case Some(v) => Some(f(v))
-  }
-
-  def flatMap[B](f: A => Option[B]): Option[B] = this match {
-    case None => None
-    case Some(v) => f(v)
   }
 
   def getOrElse[B >: A](default: => B): B = this match {
@@ -16,17 +13,22 @@ sealed trait Option[+A] {
     case Some(v) => v
   }
 
-  def orElse[B >: A](ob: => Option[B]): Option[B] = this match {
-    case None => ob
-    case Some(v) => Some(v)
-  }
+  def flatMap[B](f: A => Option[B]): Option[B] = this.map(f).getOrElse(None)
+
+//  def orElse[B >: A](ob: => Option[B]): Option[B] = this.getOrElse()
 
   def filter[A](pred: A => Boolean): Option[A] = this match {
     case Some(v: A) if (pred(v)) => Some(v)
     case _ => None
   }
 }
-
+object TestStuff extends App {
+  val someVal = Some("42").flatMap(_ match {
+    case "42" => Some(42)
+    case _ => None
+  })
+  println(someVal)
+}
 case object None extends Option[Nothing]
 case class Some[+A](value: A) extends Option[A]
 

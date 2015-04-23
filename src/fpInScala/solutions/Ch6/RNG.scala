@@ -144,11 +144,54 @@ case class State[S, +A](run: S => (A, S)) {
 
   def unit[S, A](a: A): State[S, A] = s => (a, s)
 
+  def set[S, A](s: S, a: A): State[S, A] = _ => (a,s)
 
 }
 
+sealed trait Input
+
+case object Coin extends Input
+
+case object Turn extends Input
+
+case class Machine(locked: Boolean, candies: Int, coins: Int) {
+
+  def applyState(m: Machine) = ((m.candies, m.coins), m)
+
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = {
+    def evaluateStep(s: State[Machine, (Int, Int)], in: Input): State[Machine, (Int, Int)] = {
+
+      def handleCoin(m: Machine, ca: Int, co: Int): Machine = {
+        if (m.locked) Machine(false, ca, co + 1)
+        else m
+      }
+
+      def handleTurn(m: Machine, ca: Int, co: Int): Machine = {
+        if (m.locked) m
+        else Machine(true, ca - 1, co)
+      }
+
+      val ((ca, co), ma) = s.run(this)
+
+      if (ca == 0) s
+      else {
+        val newMachine = in match {
+          case Coin => handleCoin(ma, ca, co)
+          case Turn => handleTurn(ma, ca, co)
+        }
+
+        println(s"New machine: $newMachine")
+        val returnPair = (newMachine.candies, newMachine.coins)
+        State(applyState).set(newMachine, returnPair)
+      }
+    }
+
+    val initialState = State(applyState)
+    inputs.foldLeft(initialState)(evaluateStep)
+  }
+}
+
 object test extends App {
-  val sRng = SimpleRNG(6L)
-  println(sRng.double(sRng))
+  println(Machine(false, 2, 2).simulateMachine(List(Turn, Coin)))
 }
 
